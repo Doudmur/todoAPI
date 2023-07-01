@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,20 +15,18 @@ import (
 	"todoAPI/internal/models"
 )
 
-const (
-	host     = "localhost"
-	port     = 5433
-	user     = "postgres"
-	password = "12345"
-	dbname   = "todo"
-)
-
 type Storage struct {
 	db *sql.DB
 }
 
 func New() (*Storage, error) {
-	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	if err := initConfig(); err != nil {
+		log.Fatalf("Error config %s", err)
+	}
+	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		viper.GetString("dbHost"), viper.GetInt("dbPort"), viper.GetString("dbUser"),
+		viper.GetString("dbPassword"), viper.GetString("dbName"))
+
 	db, err := sql.Open("postgres", dbconn)
 	if err != nil {
 		log.Println(err)
@@ -96,4 +95,10 @@ func (s *Storage) TaskUpdate(ctx context.Context, r *http.Request) string {
 		_, err = s.db.Exec("update tasks set name=$1 where id=$2", task.Name, id)
 		return "Task name was successfully changed to " + task.Name
 	}
+}
+
+func initConfig() error {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("config")
+	return viper.ReadInConfig()
 }
