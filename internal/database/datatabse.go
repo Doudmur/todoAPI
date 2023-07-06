@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"todoAPI/etc/logger"
 	"todoAPI/internal/models"
 )
 
@@ -20,6 +21,7 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
+	l := logger.NewLogger()
 	if err := initConfig(); err != nil {
 		log.Fatalf("Error config %s", err)
 	}
@@ -31,15 +33,16 @@ func New() (*Storage, error) {
 	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", dbconn)
 	if err != nil {
-		log.Fatal(err)
+		l.Error("Error with connection to storage!", err)
 	}
 	return &Storage{db: db}, nil
 }
 
 func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
+	l := logger.NewLogger()
 	selectResult, err := s.db.Query("SELECT * FROM tasks;")
 	if err != nil {
-		log.Println(err, "selection")
+		l.Error("Error with selection!", err)
 		return nil, err
 	}
 
@@ -48,7 +51,7 @@ func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
 		var task models.Task
 		err = selectResult.Scan(&task.Id, &task.Name, &task.Date, &task.IsDone)
 		if err != nil {
-			log.Println(err, "for")
+			l.Error("Error with scan!", err)
 			return nil, err
 		}
 		tasks = append(tasks, task)
@@ -57,43 +60,55 @@ func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
 }
 
 func (s *Storage) TaskAdd(ctx context.Context, r *http.Request) (string, error) {
+	l := logger.NewLogger()
 	var task models.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
-		log.Println("Error with decoding")
+		l.Error("Error with decoding!", err)
 		return "", nil
 	}
 	_, err = s.db.Exec("insert into tasks(name, date, isdone) values($1, $2, $3)", task.Name, time.Now(), task.IsDone)
 	if err != nil {
-		log.Println("Error with insert task")
+		l.Error("Error with insert to db!", err)
 	}
 	return "Task " + task.Name + " was successfully added", nil
 }
 
 func (s *Storage) TaskDelete(ctx context.Context, r *http.Request) string {
+	l := logger.NewLogger()
 	id := mux.Vars(r)["id"]
 	_, err := s.db.Exec("delete from tasks where id=$1", id)
 	if err != nil {
-		log.Println("Task was not found!")
+		l.Error("Error with deleting!", err)
 		return "Error"
 	}
 	return "Task was successfully deleted"
 }
 
 func (s *Storage) TaskUpdate(ctx context.Context, r *http.Request) string {
+	l := logger.NewLogger()
 	id := mux.Vars(r)["id"]
 	var task models.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	log.Println(err)
 	if err != nil {
-		log.Println("Something wrong with decoding")
+		l.Error("Error with decoding!", err)
 		return ""
 	}
 	if task.Name == "" {
 		_, err = s.db.Exec("update tasks set isdone=$1 where id=$2", task.IsDone, id)
+		if err != nil {
+			l.Error("Error with updating!", err)
+			return ""
+		}
+
 		return "Task status was successfully changed to " + strconv.FormatBool(task.IsDone)
 	} else {
 		_, err = s.db.Exec("update tasks set name=$1 where id=$2", task.Name, id)
+		if err != nil {
+			l.Error("Error with updating!", err)
+			return ""
+		}
 		return "Task name was successfully changed to " + task.Name
 	}
 }

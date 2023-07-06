@@ -3,16 +3,17 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
+	"todoAPI/etc/logger"
 )
 
 func (s *Server) getTasksHandler(w http.ResponseWriter, r *http.Request) {
+	l := logger.NewLogger()
 	ctx := context.Background()
 	tasks, err := s.db.GetTasks(ctx)
 	result, err := json.Marshal(tasks)
 	if err != nil {
-		log.Printf("No result in tasks: %s", err)
+		l.Error("No result in tasks", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

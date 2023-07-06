@@ -21,3 +21,11 @@ func NewLogger() *Logger {
 	}
 	return &Logger{logger: logger}
 }
+
+func (l *Logger) Info(str string) {
+	l.logger.Info(str)
+}
+
+func (l *Logger) Error(str string, err error) {
+	l.logger.WithError(err).Error(str)
+}
