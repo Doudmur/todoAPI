@@ -23,23 +23,23 @@ func New() (*Storage, error) {
 	if err := initConfig(); err != nil {
 		log.Fatalf("Error config %s", err)
 	}
-	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		viper.GetString("dbHost"), viper.GetInt("dbPort"), viper.GetString("dbUser"),
-		viper.GetString("dbPassword"), viper.GetString("dbName"))
-
+	host := viper.GetString("db.host")
+	port := viper.GetInt("db.port")
+	user := viper.GetString("db.user")
+	password := viper.GetString("db.password")
+	dbname := viper.GetString("db.name")
+	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", dbconn)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		log.Fatal(err)
 	}
-
 	return &Storage{db: db}, nil
 }
 
 func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
 	selectResult, err := s.db.Query("SELECT * FROM tasks;")
 	if err != nil {
-		log.Println(err)
+		log.Println(err, "selection")
 		return nil, err
 	}
 
@@ -48,7 +48,7 @@ func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
 		var task models.Task
 		err = selectResult.Scan(&task.Id, &task.Name, &task.Date, &task.IsDone)
 		if err != nil {
-			log.Println(err)
+			log.Println(err, "for")
 			return nil, err
 		}
 		tasks = append(tasks, task)
@@ -61,6 +61,7 @@ func (s *Storage) TaskAdd(ctx context.Context, r *http.Request) (string, error) 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
 		log.Println("Error with decoding")
+		return "", nil
 	}
 	_, err = s.db.Exec("insert into tasks(name, date, isdone) values($1, $2, $3)", task.Name, time.Now(), task.IsDone)
 	if err != nil {

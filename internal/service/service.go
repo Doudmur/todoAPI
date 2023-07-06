@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	_ "github.com/spf13/viper"
 	"log"
 	"net/http"
 	"todoAPI/internal/models"
@@ -27,7 +26,7 @@ func New(db Storage) (*Server, error) {
 
 func (s *Server) Run() error {
 	if err := initConfig(); err != nil {
-		log.Fatalf("Error config %s", err)
+		log.Fatal(err)
 	}
 	router := mux.NewRouter()
 	router.HandleFunc("/tasks", s.getTasksHandler).Methods("GET")

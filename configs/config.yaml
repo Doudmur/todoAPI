@@ -1,6 +1,7 @@
 port: ":8080"
-dbHost: "localhost"
-dbPort: 5433
-dbUser: "postgres"
-dbPassword: "12345"
-dbName: "todo"
+db:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: "12345"
+  name: "todoDB"
