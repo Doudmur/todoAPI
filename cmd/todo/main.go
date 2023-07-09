@@ -1,22 +1,24 @@
 package main
 
 import (
+	"context"
 	"todoAPI/etc/logger"
 	"todoAPI/internal/database"
 	"todoAPI/internal/service"
 )
 
 func main() {
-	l := logger.NewLogger()
+	logger.SetErrorLevel()
+	ctx := context.Background()
 	storage, err := database.New()
 	if err != nil {
-		l.Error("Something wrong with connection to storage!", err)
+		logger.Errorf(ctx, "Something wrong with connection to storage!", err)
 	}
 
 	s, err := service.New(storage)
 	if err != nil {
-		l.Error("Storage does not created!", err)
+		logger.Errorf(ctx, "Storage does not created!", err)
 	}
-	l.Info("Server is running")
+	logger.Infof(ctx, "Server is running")
 	s.Run()
 }

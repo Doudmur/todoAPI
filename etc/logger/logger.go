@@ -1,17 +1,16 @@
 package logger
 
 import (
+	"context"
 	"github.com/sirupsen/logrus"
 	easy "github.com/t-tomalak/logrus-easy-formatter"
 	"os"
 )
 
-type Logger struct {
-	logger *logrus.Logger
-}
+var logger *logrus.Logger
 
-func NewLogger() *Logger {
-	logger := &logrus.Logger{
+func init() {
+	logger = &logrus.Logger{
 		Out:   os.Stdout,
 		Level: logrus.DebugLevel,
 		Formatter: &easy.Formatter{
@@ -19,13 +18,20 @@ func NewLogger() *Logger {
 			LogFormat:       "[%lvl%]: %time% - %msg%\n",
 		},
 	}
-	return &Logger{logger: logger}
 }
 
-func (l *Logger) Info(str string) {
-	l.logger.Info(str)
+func Infof(ctx context.Context, str string, args ...interface{}) {
+	logger.Infof(str, args)
 }
 
-func (l *Logger) Error(str string, err error) {
-	l.logger.WithError(err).Error(str)
+func Errorf(ctx context.Context, str string, err error, args ...interface{}) {
+	logger.WithError(err).Errorf(str, args)
+}
+
+func SetErrorLevel() {
+
+}
+
+func GetErrorLevel() {
+
 }
