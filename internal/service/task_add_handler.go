@@ -7,11 +7,11 @@ import (
 )
 
 func (s *Server) taskAddHandler(w http.ResponseWriter, r *http.Request) {
-	l := logger.NewLogger()
+	logger.SetErrorLevel(4)
 	ctx := context.Background()
 	res, err := s.db.TaskAdd(ctx, r)
 	if err != nil {
-		l.Error("Error with adding to db!", err)
+		logger.Errorf(ctx, "Error with adding to db!", err)
 	}
 	w.Write([]byte(res))
 }

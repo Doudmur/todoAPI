@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+const (
+	errorLevel = 2
+	infoLevel  = 4
+)
+
 var logger *logrus.Logger
 
 func init() {
@@ -28,10 +33,18 @@ func Errorf(ctx context.Context, str string, err error, args ...interface{}) {
 	logger.WithError(err).Errorf(str, args)
 }
 
-func SetErrorLevel() {
-
+func SetErrorLevel(i int) {
+	ctx := context.Background()
+	switch i {
+	case 2:
+		logger.SetLevel(logrus.InfoLevel)
+	case 4:
+		logger.SetLevel(logrus.ErrorLevel)
+	default:
+		Errorf(ctx, "Wrong number", nil)
+	}
 }
 
-func GetErrorLevel() {
-
+func GetErrorLevel() logrus.Level {
+	return logger.GetLevel()
 }

@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 	"todoAPI/etc/logger"
@@ -21,14 +23,21 @@ type Storage struct {
 }
 
 func New() (*Storage, error) {
+	logger.SetErrorLevel(4)
 	ctx := context.Background()
+
 	if err := initConfig(); err != nil {
 		logger.Errorf(ctx, "Error config ", err)
 	}
+
+	if err := godotenv.Load(); err != nil {
+		logger.Errorf(ctx, "Error with environment variables", err)
+	}
+
 	host := viper.GetString("db.host")
 	port := viper.GetInt("db.port")
 	user := viper.GetString("db.user")
-	password := viper.GetString("db.password")
+	password := os.Getenv("DB_PASSWORD")
 	dbname := viper.GetString("db.name")
 	dbconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sql.Open("postgres", dbconn)
@@ -38,7 +47,12 @@ func New() (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
+func (s *Storage) Shutdown() {
+	s.db.Close()
+}
+
 func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
+	logger.SetErrorLevel(4)
 	selectResult, err := s.db.Query("SELECT * FROM tasks;")
 	if err != nil {
 		logger.Errorf(ctx, "Error with selection!", err)
@@ -59,6 +73,7 @@ func (s *Storage) GetTasks(ctx context.Context) ([]models.Task, error) {
 }
 
 func (s *Storage) TaskAdd(ctx context.Context, r *http.Request) (string, error) {
+	logger.SetErrorLevel(4)
 	var task models.Task
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
@@ -74,6 +89,7 @@ func (s *Storage) TaskAdd(ctx context.Context, r *http.Request) (string, error) 
 }
 
 func (s *Storage) TaskDelete(ctx context.Context, r *http.Request) string {
+	logger.SetErrorLevel(4)
 	id := mux.Vars(r)["id"]
 	_, err := s.db.Exec("delete from tasks where id=$1", id)
 	if err != nil {
@@ -84,6 +100,7 @@ func (s *Storage) TaskDelete(ctx context.Context, r *http.Request) string {
 }
 
 func (s *Storage) TaskUpdate(ctx context.Context, r *http.Request) string {
+	logger.SetErrorLevel(4)
 	id := mux.Vars(r)["id"]
 	var task models.Task
 	err := json.NewDecoder(r.Body).Decode(&task)

@@ -1,6 +1,7 @@
 go.mod
 go.sum
 .idea
-docker-compose.yaml
+build/docker-compose.yaml
 migrations
-init.sql
+build/init.sql
+.env

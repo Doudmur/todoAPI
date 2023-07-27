@@ -18,6 +18,7 @@ type Storage interface {
 	TaskAdd(ctx context.Context, r *http.Request) (string, error)
 	TaskDelete(ctx context.Context, r *http.Request) string
 	TaskUpdate(ctx context.Context, r *http.Request) string
+	Shutdown()
 }
 
 func New(db Storage) (*Server, error) {
@@ -35,6 +36,11 @@ func (s *Server) Run() error {
 	router.HandleFunc("/tasks/update/{id}", s.taskUpdateHandler).Methods("POST")
 
 	return http.ListenAndServe(viper.GetString("port"), router)
+}
+
+func (s *Server) Shutdown() error {
+	s.db.Shutdown()
+	return nil
 }
 
 func initConfig() error {

@@ -8,12 +8,12 @@ import (
 )
 
 func (s *Server) getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	l := logger.NewLogger()
+	logger.SetErrorLevel(4)
 	ctx := context.Background()
 	tasks, err := s.db.GetTasks(ctx)
 	result, err := json.Marshal(tasks)
 	if err != nil {
-		l.Error("No result in tasks", err)
+		logger.Errorf(ctx, "No result in tasks", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
