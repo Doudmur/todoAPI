@@ -6,7 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      HOST: root@5.180.180.200
+      HOST: root@185.220.204.196
       DEPLOY_DIRECTORY: /root/apps/todoAPI
 
     steps:
