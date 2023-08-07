@@ -23,9 +23,10 @@ jobs:
           go mod download
           go build -o todoAPI ./cmd/todo
 
-      - name: Deploy
-        run: |
-          sudo apt-get install -y ssh rsync 
-          sudo apt-get install sshpass
-          echo Beka2003anel1999 > password.pem
-          sshpass -v -f password.pem ssh root@185.220.204.196 ls -la
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
