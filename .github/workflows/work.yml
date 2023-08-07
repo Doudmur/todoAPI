@@ -26,4 +26,4 @@ jobs:
       - name: Deploy
         run: |
           sudo apt-get install -y ssh rsync 
-          ssh {{ env.HOST }}
+          ssh ${{ env.HOST }}
