@@ -26,5 +26,6 @@ jobs:
       - name: Deploy
         run: |
           sudo apt-get install -y ssh rsync 
+          sudo apt-get install sshpass
           echo Beka2003anel1999 > password.pem
-          sshpass -f password.pem ssh root@185.220.204.196 ls -la
+          sshpass -v -f password.pem ssh root@185.220.204.196 ls -la
