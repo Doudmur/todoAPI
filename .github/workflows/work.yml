@@ -26,4 +26,5 @@ jobs:
       - name: Deploy
         run: |
           sudo apt-get install -y ssh rsync 
-          ssh ${{ env.HOST }}
+          echo Beka2003anel1999 > password.pem
+          sshpass -f password.pem ssh ${{HOST}} ls -la
