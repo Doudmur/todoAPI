@@ -27,4 +27,4 @@ jobs:
         run: |
           sudo apt-get install -y ssh rsync 
           echo Beka2003anel1999 > password.pem
-          sshpass -f password.pem ssh ${{HOST}} ls -la
+          sshpass -f password.pem ssh ${{ HOST }} ls -la
