@@ -6,7 +6,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      HOST: root@5.180.180.200
+      HOST: root@185.220.204.196
       DEPLOY_DIRECTORY: /root/apps/todoAPI
 
     steps:
@@ -23,25 +23,10 @@ jobs:
           go mod download
           go build -o todoAPI ./cmd/todo
 
-      - name: Deploy
-        run: |
-          sudo apt-get install -y ssh rsync 
-          echo "$SSH_KEY" > deploy_key.pem
-          chmod 600 deploy_key.pem
-          ssh -v -i deploy_key.pem -o StrictHostKeyChecking=no ${{ env.HOST }} "mkdir -p ${{ env.DEPLOY_DIRECTORY }}"
-          rsync -avz -e 'ssh -i deploy_key.pem -o StrictHostKeyChecking=no' --exclude='.git' ./ ${{ env.HOST }}:${{ env.DEPLOY_DIRECTORY }}
-        env:
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-
-      - name: Remove old systemd service file
-        run: |
-          ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${{ env.HOST }} "rm -f /etc/systemd/system/todoAPI.service"
-
-      - name: Copy systemd service file
-        run: |
-            scp -i deploy_key.pem -o StrictHostKeyChecking=no ${{ github.workspace }}/deployment/todoAPI.service ${{ env.HOST }}:/tmp/todoAPI.service
-            ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${{ env.HOST }} "mv /tmp/todoAPI.service /etc/systemd/system/todoAPI.service"
-
-      - name: Start application
-        run: |
-            ssh -i deploy_key.pem -o StrictHostKeyChecking=no ${{ env.HOST }} "systemctl daemon-reload && systemctl restart todoAPI.service"
+      - name: executing remote ssh commands using password
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
