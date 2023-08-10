@@ -1,9 +1,10 @@
 package closer
 
 import (
-	"context"
 	"fmt"
-	"strings"
+	"log"
+	"os"
+	"os/signal"
 	"sync"
 )
 
@@ -12,45 +13,34 @@ type Closer struct {
 	funcs []Func
 }
 
-type Func func(ctx context.Context) error
+type Func func() error
 
-func (c *Closer) Add(f Func) {
+func (c *Closer) Add(cls ...Func) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.funcs = append(c.funcs, f)
+	c.funcs = append(c.funcs, cls...)
 }
 
-func (c *Closer) Close(ctx context.Context) error {
+func New(signals ...os.Signal) *Closer {
+	cl := new(Closer)
+	go func() {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, signals...)
+		<-ch
+		signal.Stop(ch)
+		cl.Close()
+	}()
+	return cl
+}
+
+func (c *Closer) Close() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	var (
-		msgs     = make([]string, 0, len(c.funcs))
-		complete = make(chan struct{}, 1)
-	)
-	go func() {
-		for _, f := range c.funcs {
-			if err := f(ctx); err != nil {
-				msgs = append(msgs, fmt.Sprintf("[!] %v", err))
-			}
+	for i := len(c.funcs) - 1; i >= 0; i-- {
+		item := c.funcs[i]
+		if err := item(); err != nil {
+			log.Println(err.Error())
 		}
-
-		complete <- struct{}{}
-	}()
-
-	select {
-	case <-complete:
-		break
-	case <-ctx.Done():
-		return fmt.Errorf("shutdown cancelled: %v", ctx.Err())
 	}
-
-	if len(msgs) > 0 {
-		return fmt.Errorf(
-			"shutdown finished with error(s): \n%s",
-			strings.Join(msgs, "\n"),
-		)
-	}
-
-	return nil
+	fmt.Println("Gracefully shutting down")
 }

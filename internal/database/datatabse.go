@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -125,6 +126,56 @@ func (s *Storage) TaskUpdate(ctx context.Context, r *http.Request) string {
 		}
 		return "Task name was successfully changed to " + task.Name
 	}
+}
+
+func (s *Storage) SignUp(ctx context.Context, r *http.Request) (string, error) {
+	logger.SetErrorLevel(4)
+	var user models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		logger.Errorf(ctx, "Error with decoding!", err)
+	}
+	_, err = s.db.Exec("insert into users(name, password) values($1, $2)", user.Name, user.Password)
+	if err != nil {
+		logger.Errorf(ctx, "Error with insert to db!", err)
+		return "", nil
+	}
+	return "User " + user.Name + " was successfully added", nil
+}
+
+func (s *Storage) SignIn(ctx context.Context, r *http.Request) string {
+	logger.SetErrorLevel(4)
+	var user models.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		logger.Errorf(ctx, "Error with decoding!", err)
+	}
+	var checkPass string
+	err = s.db.QueryRow("SELECT password FROM users where name=$1", user.Name).Scan(&checkPass)
+	if err != nil {
+		return "This user does not exist"
+	}
+	if checkPass != user.Password {
+		return "Wrong password"
+	}
+	token, err := generateToken(ctx)
+	if err != nil {
+		logger.Errorf(ctx, "Error with generating token!", err)
+	}
+	return token
+}
+
+func generateToken(ctx context.Context) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
+
+	tokenRes, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		logger.Errorf(ctx, "Error with signing token!", err)
+		return "", err
+	}
+	return tokenRes, nil
 }
 
 func initConfig() error {

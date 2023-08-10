@@ -18,6 +18,8 @@ type Storage interface {
 	TaskAdd(ctx context.Context, r *http.Request) (string, error)
 	TaskDelete(ctx context.Context, r *http.Request) string
 	TaskUpdate(ctx context.Context, r *http.Request) string
+	SignUp(ctx context.Context, r *http.Request) (string, error)
+	SignIn(ctx context.Context, r *http.Request) string
 	Shutdown()
 }
 
@@ -30,10 +32,12 @@ func (s *Server) Run() error {
 		log.Fatal(err)
 	}
 	router := mux.NewRouter()
-	router.HandleFunc("/tasks", s.getTasksHandler).Methods("GET")
-	router.HandleFunc("/tasks/add", s.taskAddHandler).Methods("POST")
-	router.HandleFunc("/tasks/delete/{id}", s.taskDeleteHandler).Methods("POST")
-	router.HandleFunc("/tasks/update/{id}", s.taskUpdateHandler).Methods("POST")
+	router.Handle("/tasks", s.verifyJWT(s.getTasksHandler)).Methods("GET")
+	router.Handle("/tasks/add", s.verifyJWT(s.taskAddHandler)).Methods("POST")
+	router.Handle("/tasks/delete/{id}", s.verifyJWT(s.taskDeleteHandler)).Methods("POST")
+	router.Handle("/tasks/update/{id}", s.verifyJWT(s.taskUpdateHandler)).Methods("POST")
+	router.HandleFunc("/signup", s.signUpHandler).Methods("POST")
+	router.HandleFunc("/signin", s.signInHandler).Methods("POST")
 
 	return http.ListenAndServe(viper.GetString("port"), router)
 }
